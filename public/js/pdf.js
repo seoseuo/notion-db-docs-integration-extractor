@@ -14,21 +14,20 @@ document.getElementById('convertBtn').addEventListener('click', async () => {
     start.innerHTML = "진행 중 입니다...";
 
     try {
-        const res = await fetch("/pdf", {
+        const res = await fetch('/pdf', {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ notionUrl: url })
         });
 
-        // PDF 응답을 blob으로 받음
-        const data = await res.blob();
+
 
         if (!res.ok) {
             // 에러 처리
+            const errorRes = await res.json();
             start.classList.add("d-none"); // 진행중 숨김
-            warning.innerHTML = `${data.error ? data.error : ""}${data.message ? "<br>" + data.message : ""}`;
+            warning.innerHTML = `${errorRes.error}`;
             warning.classList.remove("d-none");
-
             return;
         }
 
@@ -36,6 +35,8 @@ document.getElementById('convertBtn').addEventListener('click', async () => {
         start.classList.remove("d-none");
         start.innerHTML = "추출 성공, 다운로드 중...";
 
+        // PDF 응답을 blob으로 받음
+        const data = await res.blob();
 
         const downloadUrl = window.URL.createObjectURL(data);
 
@@ -67,7 +68,7 @@ document.getElementById('convertBtn').addEventListener('click', async () => {
     } catch (err) {
         console.error(err);
         start.classList.add("d-none"); // 진행중 숨김
-        warning.innerHTML = err.message;
+        warning.innerHTML = '네트워크 연결 실패';
         warning.classList.remove("d-none");
     }
 });

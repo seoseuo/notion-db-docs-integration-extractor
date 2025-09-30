@@ -12,12 +12,12 @@ exports.convertNotionToPdf = async (notionUrl) => {
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
+    const page = await browser.newPage();
 
     try {
-        const page = await browser.newPage();
 
         // 3. 페이지 접속
-        await page.goto(notionUrl, {waitUntil: "networkidle2", timeout: 120000}); // 2분
+        await page.goto(notionUrl, { waitUntil: "networkidle0", timeout: 50000 });
 
         // 4. DOM에서 data-block-id 추출
         const blockIds = await page.evaluate(() => {
@@ -40,7 +40,7 @@ exports.convertNotionToPdf = async (notionUrl) => {
         const pageUrls = blockIds.map((id) => `${cleanUrl}&p=${id}`);
 
         if (pageUrls.length === 0) {
-            throw new Error("데이터베이스에서 block-id를 찾을 수 없습니다.");
+            throw new Error("데이터베이스에서 block-id를 찾을 수 없습니다.<br>데이터베이스 페이지 열기 후 링크를 입력하셨나요?");
         }
 
         console.log("추출된 페이지 URL:", pageUrls);
@@ -58,19 +58,29 @@ exports.convertNotionToPdf = async (notionUrl) => {
         const merger = new PDFMerger();
 
         for (let i = 0; i < pageUrls.length; i++) {
+            console.log(pageUrls.length + "개 중 " + (i+1) + "번 째 페이지 PDF 작업 중...");
             const childPage = await browser.newPage();
             await childPage.goto(pageUrls[i], { waitUntil: "networkidle2", timeout: 60000 });
 
             const pdfBuffer = await childPage.pdf({
-                format: "A4",
+                format: "A5",
                 printBackground: true,
+                scale: 0.7,
+                margin: {
+                    top: "0mm",
+                    right: "10mm",
+                    bottom: "10mm",
+                    left: "0mm"
+                }
             });
+
 
             await merger.add(pdfBuffer); // 버퍼 추가
             await childPage.close();
         }
 
         // 병합된 최종 PDF를 버퍼로 생성
+        console.log("최종 PDF 병합 중 . . .");
         const mergedBuffer = await merger.saveAsBuffer();
 
         await browser.close();
@@ -85,7 +95,7 @@ exports.convertNotionToPdf = async (notionUrl) => {
         return {
             success: true,
             count: pageUrls.length,
-            fileName: fileName.replace(/[\\/:*?"<>|]/g, "_"), // 안전한 파일명
+            fileName: 'export',
             buffer: mergedBuffer,
         };
 
