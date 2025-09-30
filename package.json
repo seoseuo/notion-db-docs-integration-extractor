@@ -14,5 +14,11 @@
     "@commitlint/cli": "^20.0.0",
     "@commitlint/config-conventional": "^20.0.0",
     "husky": "^9.1.7"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "pdf-merger-js": "^5.1.2",
+    "puppeteer": "^24.22.3"
   }
 }
