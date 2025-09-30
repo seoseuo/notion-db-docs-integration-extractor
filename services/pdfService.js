@@ -51,7 +51,7 @@ exports.convertNotionToPdf = async (notionUrl) => {
             return titleEl ? titleEl.innerText.trim() : "notion_export";
         });
 
-        console.log("파일 이름",fileName);
+        console.log("파일 이름 :",fileName);
 
         // 6. 각 페이지 PDF 버퍼로 추출
         // TODO : 상세 설정 또한 지정할 수 있도록 수정 예정
@@ -74,6 +74,13 @@ exports.convertNotionToPdf = async (notionUrl) => {
         const mergedBuffer = await merger.saveAsBuffer();
 
         await browser.close();
+
+        console.log(fileName,".pdf Merge 완료 -");
+
+        const sizeKB = (mergedBuffer.length / 1024).toFixed(2);
+        const sizeMB = (mergedBuffer.length / (1024 * 1024)).toFixed(2);
+
+        console.log(`파일 크기: ${sizeKB} KB (${sizeMB} MB)`);
 
         return {
             success: true,

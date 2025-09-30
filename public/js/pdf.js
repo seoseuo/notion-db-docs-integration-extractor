@@ -26,8 +26,9 @@ document.getElementById('convertBtn').addEventListener('click', async () => {
         if (!res.ok) {
             // 에러 처리
             start.classList.add("d-none"); // 진행중 숨김
-            warning.innerHTML = `${data.error || data.message || "오류"}`;
+            warning.innerHTML = `${data.error ? data.error : ""}${data.message ? "<br>" + data.message : ""}`;
             warning.classList.remove("d-none");
+
             return;
         }
 
