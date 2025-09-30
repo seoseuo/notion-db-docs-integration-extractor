@@ -18,6 +18,8 @@
   "dependencies": {
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "html2pdf": "^0.0.11",
+    "html2pdf-node": "^1.0.8",
     "pdf-merger-js": "^5.1.2",
     "puppeteer": "^24.22.3"
   }
