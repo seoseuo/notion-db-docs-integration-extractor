@@ -19,7 +19,7 @@ exports.convertNotionToPdf = async (notionUrl) => {
     try {
 
         // 3. 페이지 접속
-        await page.goto(notionUrl, { waitUntil: "networkidle0", timeout: 50000 });
+        await page.goto(notionUrl, { waitUntil: "networkidle0", timeout: 100000 });
 
         // 4. DOM에서 data-block-id 추출
         const blockIds = await page.evaluate(() => {
@@ -55,25 +55,32 @@ exports.convertNotionToPdf = async (notionUrl) => {
             console.log(pageUrls.length + "개 중 " + (i + 1) + "번째 페이지 HTML 추출 중...");
 
             const childPage = await browser.newPage();
-            await childPage.goto(pageUrls[i], { waitUntil: "networkidle0", timeout: 60000 });
-            const childHtml = await childPage.content();
+            await childPage.goto(pageUrls[i], { waitUntil: "networkidle0", timeout: 100000 })
+
+            // 페이지 캡쳐
 
 
             // 6. childPage html2pdf 변환
             console.log(pageUrls.length + "개 중 " + (i + 1) + "번째 페이지 PDF 변환 중...");
+            // 6-1. 문서 pdf로 변환
+            // const pdfBuffer = await childPage.pdf({
+            //     format: "A4",
+            //     printBackground: true,
+            //     scale: 0.7,
+            //     margin: {top: 0, bottom: 0, left: 0, right: 0}
+            // });
 
-            // URL 직접 입력
-            await page.setContent(childHtml, { waitUntil: "networkidle0" });
-            const pdfBuffer = await childHtml.pdf({
-                format: "Letter",
-                printBackground: true,
-                scale: 0.7,
-                margin: {top: 0, bottom: 0, left: 0, right: 0}
-            });
+            // 6-2. 스크린샷 캡쳐로 pdf 변환
+            const screenshotBuffer = await page.screenshot();
+            const pdfDoc = await PDFDocument.create();
+            const image = await pdfDoc.embedJpg(screenshotBuffer);
+            const page = pdfDoc.addPage([image.width, image.height]);
+            page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+            const pdfBuffer = await pdfDoc.save();
 
-            await childPage.close();
+
             await merger.add(pdfBuffer); // 버퍼 추가
-
+            await childPage.close();
 
         }
 
