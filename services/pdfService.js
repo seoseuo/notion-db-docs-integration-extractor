@@ -1,6 +1,7 @@
 const puppeteer = require("puppeteer");
 const PDFMerger = require("pdf-merger-js").default;
-const html2pdf = require("html2pdf-node");
+// const html2pdf = require("html2pdf-node");
+//const fs = require("fs");
 
 exports.convertNotionToPdf = async (notionUrl) => {
 
@@ -53,26 +54,27 @@ exports.convertNotionToPdf = async (notionUrl) => {
         for (let i = 0; i < pageUrls.length; i++) {
             console.log(pageUrls.length + "개 중 " + (i + 1) + "번째 페이지 HTML 추출 중...");
 
-            // const childPage = await browser.newPage();
-            // await childPage.goto(pageUrls[i], { waitUntil: "networkidle0", timeout: 60000 });
-            // const childHtml = await childPage.content();
-            // await childPage.close();
+            const childPage = await browser.newPage();
+            await childPage.goto(pageUrls[i], { waitUntil: "networkidle0", timeout: 60000 });
+            const childHtml = await childPage.content();
+
 
             // 6. childPage html2pdf 변환
             console.log(pageUrls.length + "개 중 " + (i + 1) + "번째 페이지 PDF 변환 중...");
 
             // URL 직접 입력
-            const file = { url: pageUrls[i]};
-            const options = {
-                format: "A4",
+            await page.setContent(childHtml, { waitUntil: "networkidle0" });
+            const pdfBuffer = await childHtml.pdf({
+                format: "Letter",
                 printBackground: true,
-                margin: "0",
-                scale: 0.7
-            };
-            const pdfBuffer  = await html2pdf.generatePdfOfHtml(file, options);
-            console.log(typeof pdfBuffer);
+                scale: 0.7,
+                margin: {top: 0, bottom: 0, left: 0, right: 0}
+            });
 
-            await merger.add(pdfBuffer);
+            await childPage.close();
+            await merger.add(pdfBuffer); // 버퍼 추가
+
+
         }
 
         await browser.close();
