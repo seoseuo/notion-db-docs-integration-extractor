@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer");
 const PDFMerger = require("pdf-merger-js").default;
+const html2pdf = require("html2pdf-node");
 
 exports.convertNotionToPdf = async (notionUrl) => {
 
@@ -42,50 +43,46 @@ exports.convertNotionToPdf = async (notionUrl) => {
         if (pageUrls.length === 0) {
             throw new Error("데이터베이스에서 block-id를 찾을 수 없습니다.<br>데이터베이스 페이지 열기 후 링크를 입력하셨나요?");
         }
-
         console.log("추출된 페이지 URL:", pageUrls);
 
-        //제목 기반 파일명 추출
-        const fileName = await page.evaluate(() => {
-            const titleEl = document.querySelector("h1");
-            return titleEl ? titleEl.innerText.trim() : "notion_export";
-        });
 
-        console.log("파일 이름 :",fileName);
+        // TODO
 
-        // 6. 각 페이지 PDF 버퍼로 추출
-        // TODO : 상세 설정 또한 지정할 수 있도록 수정 예정
         const merger = new PDFMerger();
-
+        // 5. 각 페이지 HTML 추출 및 pdf 변환 후 버퍼에 저장
         for (let i = 0; i < pageUrls.length; i++) {
-            console.log(pageUrls.length + "개 중 " + (i+1) + "번 째 페이지 PDF 작업 중...");
-            const childPage = await browser.newPage();
-            await childPage.goto(pageUrls[i], { waitUntil: "networkidle2", timeout: 60000 });
+            console.log(pageUrls.length + "개 중 " + (i + 1) + "번째 페이지 HTML 추출 중...");
 
-            const pdfBuffer = await childPage.pdf({
-                format: "A5",
+            // const childPage = await browser.newPage();
+            // await childPage.goto(pageUrls[i], { waitUntil: "networkidle0", timeout: 60000 });
+            // const childHtml = await childPage.content();
+            // await childPage.close();
+
+            // 6. childPage html2pdf 변환
+            console.log(pageUrls.length + "개 중 " + (i + 1) + "번째 페이지 PDF 변환 중...");
+
+            // URL 직접 입력
+            const file = { url: pageUrls[i]};
+            const options = {
+                format: "A4",
                 printBackground: true,
-                scale: 0.7,
-                margin: {
-                    top: "0mm",
-                    right: "10mm",
-                    bottom: "10mm",
-                    left: "0mm"
-                }
-            });
+                margin: "0",
+                scale: 0.7
+            };
+            const pdfBuffer  = await html2pdf.generatePdfOfHtml(file, options);
+            console.log(typeof pdfBuffer);
 
-
-            await merger.add(pdfBuffer); // 버퍼 추가
-            await childPage.close();
+            await merger.add(pdfBuffer);
         }
 
+        await browser.close();
+
+        // 7. pdf 병합
         // 병합된 최종 PDF를 버퍼로 생성
         console.log("최종 PDF 병합 중 . . .");
         const mergedBuffer = await merger.saveAsBuffer();
 
-        await browser.close();
-
-        console.log(fileName,".pdf Merge 완료 -");
+        console.log("pdf Merge 완료 -");
 
         const sizeKB = (mergedBuffer.length / 1024).toFixed(2);
         const sizeMB = (mergedBuffer.length / (1024 * 1024)).toFixed(2);
@@ -94,12 +91,11 @@ exports.convertNotionToPdf = async (notionUrl) => {
 
         return {
             success: true,
-            count: pageUrls.length,
+            count: pageUrls.length, // 합친 문서 개수
             fileName: 'export',
-            buffer: mergedBuffer,
+            buffer: mergedBuffer, // 최종 병합된 PDF 버퍼
         };
-
-    }catch (err) {
+    } catch (err) {
         await browser.close();
         throw new Error(err.message);
     }
